@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+.env
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+*.bak
+*.backup
+*.bak.*
+*~

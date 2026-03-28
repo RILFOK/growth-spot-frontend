@@ -1,0 +1,31 @@
+# robots.txt для сайта growth-spot.ru
+# Правила индексации для поисковых роботов
+
+# Основные правила для всех роботов
+User-agent: *
+
+# Разрешаем индексацию публичных страниц
+Allow: /
+Allow: /privacy
+Allow: /privacy-full
+Allow: /consent
+Allow: /terms
+
+# Запрещаем индексацию админки
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin/login
+
+# Запрещаем индексацию служебных файлов
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Задержка между запросами (в секундах) - для снижения нагрузки
+Crawl-delay: 1
+
+# Указываем основной хост (для Яндекса)
+Host: https://growth-spot.ru
+
+# Карта сайта
+Sitemap: https://growth-spot.ru/sitemap.xml

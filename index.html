@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru" translate="no">
+  <head>
+    <meta name="google" content="notranslate" />
+    <meta charset="UTF-8" />
+    <script>
+    (() => {
+    try {
+      const savedTheme = localStorage.getItem('theme')
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const isDark = savedTheme === 'dark' || (!savedTheme && systemDark)
+
+      if (isDark) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    } catch (e) {
+      document.documentElement.classList.add('dark')
+    }
+    })()
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Точка Роста — Разработка сайтов под ключ</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
