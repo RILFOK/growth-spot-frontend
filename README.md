@@ -1,60 +1,46 @@
-# Документация проекта growth-spot.ru
+# Growth Spot — Frontend
 
-В проекте используется раздельная техническая документация для frontend и backend частей.
+React SPA for a digital-services website and its administrative interface. This repository contains a standalone React/Vite implementation; it may differ from the current live iteration of Growth Spot.
 
-## Production
-- Сайт: https://growth-spot.ru
-- Админка: https://growth-spot.ru/admin/login
+## Stack
+React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router · Axios · React Hook Form · Zustand.
 
-## Основные документы
-- [Frontend документация](./frontend.md)
-- [Backend документация](./backend.md)
+## Implemented areas
+- Public-facing website, legal pages and lead form.
+- Administrative interface for leads, users and site settings.
+- Integration with a separate REST API.
+- Authentication UI and two-factor authentication flows.
+- Responsive interface and analytics/SEO integration.
 
-## Быстрый старт
-- [Frontend — установка и запуск](./frontend.md#установка-и-запуск)
-- [Backend — установка и запуск](./backend.md#установка-и-запуск)
+## Local development
+Requirements: Node.js and npm. The backend and database are separate services.
 
-## Содержание
+```bash
+npm ci
+npm run dev
+```
 
-### Frontend
-Документ `frontend.md` включает:
-- обзор frontend части;
-- установку и запуск;
-- архитектуру;
-- роутинг;
-- описание публичного сайта;
-- описание админ-панели;
-- авторизацию и 2FA;
-- формы и валидацию;
-- SEO и аналитику;
-- интеграцию с API;
-- деплой.
+Production build:
 
-### Backend
-Документ `backend.md` включает:
-- обзор backend части;
-- установку и запуск;
-- архитектуру;
-- API;
-- авторизацию и роли;
-- заявки и антиспам;
-- пользователей;
-- настройки;
-- IP-безопасность;
-- базу данных;
-- деплой.
+```bash
+npm run build
+npm run preview
+```
 
-## Деплой
-В проекте используется единый bash-скрипт деплоя, который:
-- собирает frontend;
-- публикует frontend в production;
-- синхронизирует backend-код;
-- устанавливает production-зависимости backend;
-- перезапускает backend через PM2;
-- проверяет nginx;
-- выполняет health-check backend;
-- проверяет доступность frontend.
+The API base path defaults to `/api`; configure `VITE_API_URL` for another development endpoint.
 
-Подробности см. в разделах:
-- Frontend — деплой
-- Backend — деплой
+## Documentation
+- [Overview](docs/frontend/overview.md)
+- [Local setup](docs/frontend/setup.md)
+- [Architecture](docs/frontend/architecture.md)
+- [Routes](docs/frontend/routing.md)
+- [Public website](docs/frontend/public-site.md)
+- [Admin interface](docs/frontend/admin-panel.md)
+- [Auth and 2FA](docs/frontend/auth-and-2fa.md)
+- [API integration](docs/frontend/api-integration.md)
+- [Deployment](docs/frontend/deployment.md)
+
+## Related project
+[Growth Spot — Backend](https://github.com/RILFOK/growth-spot-backend) — Node.js, Express and PostgreSQL.
+
+> The public repository is intended as a source-code sample. Production credentials, database data and private administrative access are not included.
