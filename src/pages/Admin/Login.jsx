@@ -90,7 +90,7 @@ const ShieldIcon = ({ className }) => (
 // ── Главный компонент ────────────────────────────────────────────────────────
 const Login = () => {
   const navigate = useNavigate()
-  const { login, verify2FA, cancel2FA, require2FA, loading: authLoading, pendingUser, apiAvailable } = useAuth()
+  const { user, login, verify2FA, cancel2FA, require2FA, loading: authLoading, pendingUser, apiAvailable } = useAuth()
 
   // Шаг 1: email + пароль
   const [email,    setEmail]    = useState('')
@@ -115,9 +115,8 @@ const Login = () => {
   // Редирект если уже залогинен
   useEffect(() => {
     if (authLoading) return
-    const token = localStorage.getItem('token')
-    if (token) navigate('/admin', { replace: true })
-  }, [navigate, authLoading])
+    if (user) navigate('/admin', { replace: true })
+  }, [navigate, authLoading, user])
 
   // ── Шаг 1: Авторизация ────────────────────────────────────────────────────
   const handleLogin = async (e) => {

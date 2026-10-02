@@ -210,13 +210,14 @@ const Dashboard = () => {
 
   const pollRef = useRef(null)
 
-  const is2FAEnabled = user?.twoFactorEnabled || !!localStorage.getItem(`totp_secret_${user?.email}`)
+  const is2FAEnabled = user?.twoFactorEnabled === true
 
   // ── Проверка авторизации ──────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading) return
     const token = localStorage.getItem('token')
-    if (!token) {
+    if (!token || !user) {
+      setIsAuthorized(false)
       navigate('/admin/login', { replace: true })
     } else {
       setIsAuthorized(true)
@@ -230,7 +231,7 @@ const Dashboard = () => {
         setShow2FAWarning(true)
       }
     }
-  }, [navigate, authLoading, is2FAEnabled])
+  }, [navigate, authLoading, is2FAEnabled, user])
 
   useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab)
@@ -378,15 +379,15 @@ const Dashboard = () => {
   }
 
   // ── Данные пользователя ───────────────────────────────────────────────────
-  const role = user?.role || 'admin'
-  const displayName = user?.name || user?.nickname || user?.email || 'Администратор'
+  const role = user?.role ?? null
+  const displayName = user?.name || user?.nickname || user?.email || 'Пользователь'
 
   const roleBadge = {
     admin:   { label: 'Администратор', color: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300' },
     moderator: { label: 'Модератор', color: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' },
     manager: { label: 'Менеджер',      color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' },
     viewer:  { label: 'Просмотр',      color: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300' },
-  }[role] ?? { label: 'Администратор', color: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300' }
+  }[role] ?? { label: 'Роль не определена', color: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }
 
   // ── Вкладки ───────────────────────────────────────────────────────────────
   const tabs = [

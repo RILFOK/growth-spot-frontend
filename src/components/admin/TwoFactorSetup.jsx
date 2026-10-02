@@ -11,7 +11,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import QRCode from 'react-qr-code'
-import { useAuth, generateTOTPSecret, verifyTOTPCode, getCurrentTOTPCode } from '../../context/AuthContext'
+import { useAuth, generateTOTPSecret } from '../../context/AuthContext'
 import Button from '../ui/Button'
 import Alert from '../ui/Alert'
 
@@ -138,7 +138,7 @@ const CodeInput = ({ value, onChange, disabled, onSubmit }) => {
 const TwoFactorSetup = () => {
   const { user, enable2FA, disable2FA } = useAuth()
 
-  const is2FAEnabled = user?.twoFactorEnabled || !!localStorage.getItem(`totp_secret_${user?.email}`)
+  const is2FAEnabled = user?.twoFactorEnabled === true
 
   // ── Состояние настройки ──────────────────────────────────────────────────
   const [step,        setStep]        = useState('idle')   // idle | setup | verify | disable | done
@@ -149,17 +149,6 @@ const TwoFactorSetup = () => {
   const [message,     setMessage]     = useState(null)      // { type, text }
   const [showSecret,  setShowSecret]  = useState(false)
   const [copied,      setCopied]      = useState(false)
-
-  // Текущий TOTP код (для демонстрации в dev режиме)
-  const [liveCode, setLiveCode] = useState('')
-
-  useEffect(() => {
-    if (!totpData?.secret) return
-    const update = () => setLiveCode(getCurrentTOTPCode(totpData.secret) || '')
-    update()
-    const id = setInterval(update, 1000)
-    return () => clearInterval(id)
-  }, [totpData])
 
   // ── Начать настройку 2FA ─────────────────────────────────────────────────
   const handleStartSetup = () => {
@@ -197,6 +186,9 @@ const TwoFactorSetup = () => {
     const result = await enable2FA(totpData.secret, finalCode)
 
     if (result.success) {
+      setTotpData(null)
+      setCode('')
+      setShowSecret(false)
       setStep('done')
       setMessage({ type: 'success', text: 'Google Authenticator успешно подключён!' })
     } else {
@@ -425,18 +417,6 @@ const TwoFactorSetup = () => {
                 Сгенерировать новый ключ
               </button>
 
-              {/* Live код (dev helper) */}
-              {liveCode && (
-                <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-100 dark:border-violet-800">
-                  <p className="text-xs text-violet-600 dark:text-violet-400 font-medium mb-1">Текущий код (для проверки):</p>
-                  <div className="flex items-center gap-3">
-                    <code className="text-2xl font-mono font-bold text-violet-700 dark:text-violet-300 tracking-widest">
-                      {liveCode.slice(0, 3)} {liveCode.slice(3)}
-                    </code>
-                    <TOTPTimer />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
