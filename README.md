@@ -27,7 +27,18 @@ npm run build
 npm run preview
 ```
 
-The API base path defaults to `/api`; configure `VITE_API_URL` for another development endpoint.
+The API base path defaults to `/api`; configure `VITE_API_URL` for another development endpoint. Default Vite output is standard static `dist/` with separate hashed assets. Historical Google/Yandex site-ownership verification files are not part of the current portfolio build.
+
+## Verification
+
+```bash
+npm ci
+npm test
+npm run build
+npm audit
+```
+
+Session restoration now verifies `GET /auth/me`, frontend permissions default to no access, and legacy locally persisted TOTP secrets are purged. The project remains an earlier standalone React implementation, not the live Next.js production website.
 
 ## Documentation
 - [Overview](docs/frontend/overview.md)

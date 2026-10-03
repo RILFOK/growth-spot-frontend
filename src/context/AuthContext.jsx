@@ -1,15 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import * as OTPAuth from 'otpauth'
 import api from '../api/client'
+import { normalizeAuthUser, hasRolePermission, isAdminUser, clearLegacyTotpSecrets } from '../utils/authSecurity'
 
 const AuthContext = createContext(null)
-
-const ROLE_PERMISSIONS = {
-  admin: ['settings.edit', 'leads.delete', 'leads.edit'],
-  moderator: ['leads.delete', 'leads.edit'],
-  manager: ['leads.edit'],
-  viewer: [],
-}
 
 export const generateTOTPSecret = (email = 'admin') => {
   const secret = new OTPAuth.Secret()
@@ -28,45 +22,6 @@ export const generateTOTPSecret = (email = 'admin') => {
   }
 }
 
-export const verifyTOTPCode = (secret, code) => {
-  try {
-    const totp = new OTPAuth.TOTP({
-      issuer: 'Точка Роста',
-      label: 'admin',
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-      secret: OTPAuth.Secret.fromBase32(secret.replace(/\s/g, '').toUpperCase()),
-    })
-
-    const delta = totp.validate({
-      token: code.replace(/\s/g, ''),
-      window: 1,
-    })
-
-    return delta !== null
-  } catch {
-    return false
-  }
-}
-
-export const getCurrentTOTPCode = (secret) => {
-  try {
-    const totp = new OTPAuth.TOTP({
-      issuer: 'Точка Роста',
-      label: 'admin',
-      algorithm: 'SHA1',
-      digits: 6,
-      period: 30,
-      secret: OTPAuth.Secret.fromBase32(secret.replace(/\s/g, '').toUpperCase()),
-    })
-
-    return totp.generate()
-  } catch {
-    return ''
-  }
-}
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -75,19 +30,35 @@ export const AuthProvider = ({ children }) => {
   const [apiAvailable, setApiAvailable] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('admin_user')
+    let active = true
+    const restoreSession = async () => {
+      clearLegacyTotpSecrets(localStorage)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        localStorage.removeItem('admin_user')
+        if (active) setLoading(false)
+        return
+      }
 
-    if (token && storedUser) {
+      // Never trust a role restored from browser storage without API verification.
       try {
-        setUser(JSON.parse(storedUser))
+        const response = await api.get('/auth/me')
+        if (!active) return
+        const confirmedUser = normalizeAuthUser(response.data)
+        if (!confirmedUser) throw new Error('Некорректный ответ сервера')
+        setUser(confirmedUser)
+        localStorage.setItem('admin_user', JSON.stringify(confirmedUser))
       } catch {
+        if (!active) return
         localStorage.removeItem('token')
         localStorage.removeItem('admin_user')
+        setUser(null)
+      } finally {
+        if (active) setLoading(false)
       }
     }
-
-    setLoading(false)
+    restoreSession()
+    return () => { active = false }
   }, [])
 
   const login = async (email, password) => {
@@ -103,12 +74,18 @@ export const AuthProvider = ({ children }) => {
       setApiAvailable(true)
 
       if (need2FA) {
-        setPendingUser({ ...userData, email, tempToken: tempToken || token })
+        if (typeof tempToken !== 'string' || !tempToken) {
+          return { success: false, error: 'Не удалось начать проверку 2FA' }
+        }
+        setPendingUser({ email, tempToken })
         setRequire2FA(true)
         return { success: true, require2FA: true }
       }
 
-      const userToSave = userData || { email, role: 'admin', name: 'Администратор' }
+      const userToSave = normalizeAuthUser(userData)
+      if (!userToSave || typeof token !== 'string' || !token) {
+        return { success: false, error: 'Некорректный ответ сервера' }
+      }
 
       localStorage.setItem('token', token)
       localStorage.setItem('admin_user', JSON.stringify(userToSave))
@@ -136,8 +113,10 @@ export const AuthProvider = ({ children }) => {
       })
 
       const { token, user: userData } = response.data
-      const userToSave = userData || { ...pendingUser, twoFactorEnabled: true }
-      delete userToSave.tempToken
+      const userToSave = normalizeAuthUser(userData)
+      if (!userToSave || typeof token !== 'string' || !token) {
+        return { success: false, error: 'Некорректный ответ сервера' }
+      }
 
       localStorage.setItem('token', token)
       localStorage.setItem('admin_user', JSON.stringify(userToSave))
@@ -168,7 +147,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/enable-2fa', { secret, code })
 
-      localStorage.setItem(`totp_secret_${user.email}`, secret)
+      // TOTP secret is sent to the API for enrollment but never stored locally.
 
       const updatedUser = { ...user, twoFactorEnabled: true }
       localStorage.setItem('admin_user', JSON.stringify(updatedUser))
@@ -192,7 +171,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/disable-2fa', { code })
 
-      localStorage.removeItem(`totp_secret_${user.email}`)
+      clearLegacyTotpSecrets(localStorage)
 
       const updatedUser = { ...user, twoFactorEnabled: false }
       localStorage.setItem('admin_user', JSON.stringify(updatedUser))
@@ -211,18 +190,16 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('admin_user')
+    clearLegacyTotpSecrets(localStorage)
     setUser(null)
     setPendingUser(null)
     setRequire2FA(false)
   }, [])
 
-  const hasPermission = useCallback((permission) => {
-    if (!user) return false
-    const role = user.role || 'admin'
-    return (ROLE_PERMISSIONS[role] || []).includes(permission)
-  }, [user])
+  const hasPermission = useCallback((permission) =>
+    hasRolePermission(user, permission), [user])
 
-  const isAdmin = useCallback(() => (user?.role || 'admin') === 'admin', [user])
+  const isAdmin = useCallback(() => isAdminUser(user), [user])
   const canEditSettings = useCallback(() => hasPermission('settings.edit'), [hasPermission])
   const canDeleteLeads = useCallback(() => hasPermission('leads.delete'), [hasPermission])
   const canEditLeads = useCallback(() => hasPermission('leads.edit'), [hasPermission])

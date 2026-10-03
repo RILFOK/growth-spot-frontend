@@ -16,9 +16,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useSettings } from '../../context/SettingsContext'
-
-// ID метрики по умолчанию (fallback)
-const DEFAULT_METRIKA_ID = '108251909'
+import { normalizeMetrikaId } from '../../utils/analytics'
 
 const YandexMetrika = () => {
   const location = useLocation()
@@ -26,8 +24,9 @@ const YandexMetrika = () => {
   const isInitialized = useRef(false)
   const currentMetrikaId = useRef(null)
   
-  // Получаем ID из настроек или используем дефолтный
-  const metrikaId = get('yandex_metrika_id', DEFAULT_METRIKA_ID)
+  // Do not send preview/portfolio traffic to a historic production counter.
+  // Validate the value before interpolating it into inline analytics bootstrap.
+  const metrikaId = normalizeMetrikaId(get('yandex_metrika_id'))
 
   /**
    * Инициализация метрики при первой загрузке
@@ -49,7 +48,7 @@ const YandexMetrika = () => {
 
     // Загружаем скрипт метрики
     const script = document.createElement('script')
-    script.innerHTML = `
+    script.textContent = `
       (function(m,e,t,r,i,k,a){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
