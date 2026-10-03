@@ -27,7 +27,7 @@ npm run build
 npm run preview
 ```
 
-The API base path defaults to `/api`; configure `VITE_API_URL` for another development endpoint.
+The API base path defaults to `/api`; configure `VITE_API_URL` for another development endpoint. Default Vite output is standard static `dist/` with separate hashed assets. Historical Google/Yandex site-ownership verification files are not part of the current portfolio build.
 
 ## Verification
 
